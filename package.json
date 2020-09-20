@@ -1,0 +1,30 @@
+{
+  "name": "ugit-ts",
+  "version": "1.0.0",
+  "description": "Typescript Git Implementation",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">= 12.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint . --ext .js,.ts",
+    "build": "npm run lint && tsc",
+    "watch": "tsc -w"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "yargs": "^16.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^12.12.62",
+    "@types/yargs": "^15.0.5",
+    "@typescript-eslint/eslint-plugin": "^4.1.1",
+    "@typescript-eslint/parser": "^4.1.1",
+    "eslint": "^7.9.0",
+    "eslint-config-airbnb-typescript": "^10.0.0",
+    "eslint-plugin-import": "^2.22.0",
+    "typescript": "^4.0.3"
+  }
+}
