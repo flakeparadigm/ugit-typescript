@@ -3,11 +3,12 @@ import path from 'path';
 import crypto from 'crypto';
 import UnexpectedTypeError from './errors/UnexpectedTypeError';
 
-const GIT_DIR = '.ugit';
+export const GIT_DIR = '.ugit';
 const OBJECTS_DIR = 'objects';
 
-export type ObjectType = 'blob';
+export type ObjectType = 'blob' | 'tree';
 export const OBJECT_TYPE_BLOB = 'blob';
+export const OBJECT_TYPE_TREE = 'tree';
 
 /**
  * Initialize the ugit repository
@@ -33,7 +34,7 @@ export function hashObject(
     repoPath: string,
     data: Buffer,
     type: ObjectType = OBJECT_TYPE_BLOB,
-): void {
+): string {
     const repoObjectsDir = path.join(repoPath, GIT_DIR, OBJECTS_DIR);
     const hash = crypto.createHash('sha1');
     const object = Buffer.concat([
@@ -48,6 +49,7 @@ export function hashObject(
     const objectPath = path.join(repoObjectsDir, objectId);
 
     fs.writeFileSync(objectPath, object);
+    return objectId;
 }
 
 /**
@@ -69,7 +71,9 @@ export function getObject(
     const data = object.slice(firstNull + 1);
 
     if (expectedType && (type !== expectedType)) {
-        throw new UnexpectedTypeError('Loaded object does not match expected type.');
+        throw new UnexpectedTypeError(
+            `Loaded object's type (${type}) does not match expected type (${expectedType}).`,
+        );
     }
 
     return data;

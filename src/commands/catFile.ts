@@ -1,8 +1,14 @@
 import { Arguments, Argv, CommandModule } from 'yargs';
-import { getObject, ObjectType, OBJECT_TYPE_BLOB } from '../data';
+import {
+    getObject,
+    ObjectType,
+    OBJECT_TYPE_BLOB,
+    OBJECT_TYPE_TREE,
+} from '../data';
 
 const objectTypes: ReadonlyArray<ObjectType> = [
     OBJECT_TYPE_BLOB,
+    OBJECT_TYPE_TREE,
 ];
 
 type CatFileArgs = {
