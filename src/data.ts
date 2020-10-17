@@ -5,10 +5,12 @@ import UnexpectedTypeError from './errors/UnexpectedTypeError';
 
 export const GIT_DIR = '.ugit';
 const OBJECTS_DIR = 'objects';
+const HEAD_FILE = 'HEAD';
 
-export type ObjectType = 'blob' | 'tree';
 export const OBJECT_TYPE_BLOB = 'blob';
 export const OBJECT_TYPE_TREE = 'tree';
+export const OBJECT_TYPE_COMMIT = 'commit';
+export type ObjectType = 'blob' | 'tree' | 'commit';
 
 /**
  * Initialize the ugit repository
@@ -77,4 +79,34 @@ export function getObject(
     }
 
     return data;
+}
+
+/**
+ * Get the Object ID of the current `HEAD` commit
+ *
+ * @param repoPath path of the repo root
+ */
+export function getHead(repoPath: string): string|null {
+    const headPath = path.join(repoPath, GIT_DIR, HEAD_FILE);
+
+    try {
+        return fs.readFileSync(headPath).toString().trim();
+    } catch (err) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (err.code !== 'ENOENT') throw (err); // allow nonexistent HEAD file
+    }
+
+    return null;
+}
+
+/**
+ * Set the Object ID for `HEAD`
+ *
+ * @param repoPath path of the repo root
+ * @param objectId object ID to save as `HEAD`
+ */
+export function setHead(repoPath: string, objectId: string): void {
+    const headPath = path.join(repoPath, GIT_DIR, HEAD_FILE);
+
+    fs.writeFileSync(headPath, Buffer.from(objectId));
 }

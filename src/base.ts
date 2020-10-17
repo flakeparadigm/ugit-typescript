@@ -1,12 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 import {
+    getHead,
     getObject,
     GIT_DIR,
     hashObject,
     ObjectType,
     OBJECT_TYPE_BLOB,
+    OBJECT_TYPE_COMMIT,
     OBJECT_TYPE_TREE,
+    setHead,
 } from './data';
 import UnexpectedFilenameError from './errors/UnexpectedFilenameError';
 
@@ -198,4 +201,28 @@ export function readTree(repoPath: string, treeObjectId: string): void {
             getObject(repoPath, tree[filePath], OBJECT_TYPE_BLOB),
         );
     });
+}
+
+/**
+ * Create a commit based on the current state of the repo
+ *
+ * @param repoPath path of the repo root
+ * @param message the message to store with this commit
+ */
+export function commit(repoPath: string, message: string): string {
+    const rootObjectId = writeTree(repoPath, repoPath);
+    const HEAD = getHead(repoPath);
+
+    let commitData = `${OBJECT_TYPE_TREE} ${rootObjectId}\n`;
+    if (HEAD) commitData += `parent ${HEAD}\n`;
+    commitData += `\n${message}\n`;
+
+    const commitObjectId = hashObject(
+        repoPath,
+        Buffer.from(commitData),
+        OBJECT_TYPE_COMMIT,
+    );
+
+    setHead(repoPath, commitObjectId);
+    return commitObjectId;
 }
