@@ -21,8 +21,8 @@ type TreeEntry = {
  *
  * @param checkPath the path string to check
  */
-function isIgnored(checkPath: string): boolean {
-    const parts = checkPath.split(path.sep);
+function isIgnored(repoPath: string, checkPath: string): boolean {
+    const parts = path.relative(repoPath, checkPath).split(path.sep);
     const ignored = [
         GIT_DIR,
         '.git',
@@ -34,39 +34,51 @@ function isIgnored(checkPath: string): boolean {
 }
 
 /**
+ * Calls the provided callback for each file or directory found in the provided
+ * search directory. It will automatically skip files ignored by ugit.
+ *
+ * @param repoPath absolute path of the ugit repository
+ * @param directory absolute path of the directory to iterate over
+ * @param callback the callback to call for each entry in the directory
+ */
+function forEachFile(
+    repoPath: string,
+    directory: string,
+    callback: (dirEntry: fs.Dirent, entryPath: string) => void,
+): void {
+    fs.readdirSync(directory, { withFileTypes: true }).forEach((dirEntry) => {
+        const entryPath = path.join(directory, dirEntry.name);
+
+        // filtered out ignored files and symlinks
+        if (isIgnored(repoPath, entryPath) || dirEntry.isSymbolicLink()) return;
+
+        callback(dirEntry, entryPath);
+    });
+}
+
+/**
  * Store a tree (directory) into the ugit Object Store
  *
- * @param repoDir path of the repo root
- * @param directory the directory to store
+ * @param repoPath path of the repo root
+ * @param directory the absolute path of the directory to store
  */
-export function writeTree(repoDir:string, directory: string): string {
+export function writeTree(repoPath: string, directory: string): string {
     const entries: TreeEntry[] = [];
 
-    fs.readdirSync(directory).forEach((name) => {
-        const entryPath = path.join(directory, name);
-        const entryStat = fs.statSync(entryPath);
-
-        // filtered out ignroed files and symlinks
-        if (
-            isIgnored(name)
-            || entryStat.isSymbolicLink()
-        ) {
-            return;
-        }
-
+    forEachFile(repoPath, directory, (dirEntry, entryPath) => {
         // handle the files & directories
-        if (entryStat.isFile()) {
+        if (dirEntry.isFile()) {
             const data = fs.readFileSync(entryPath);
 
             entries.push({
-                name,
-                objectId: hashObject(repoDir, data, OBJECT_TYPE_BLOB),
+                name: dirEntry.name,
+                objectId: hashObject(repoPath, data, OBJECT_TYPE_BLOB),
                 type: OBJECT_TYPE_BLOB,
             });
-        } else if (entryStat.isDirectory()) {
+        } else if (dirEntry.isDirectory()) {
             entries.push({
-                name,
-                objectId: writeTree(repoDir, entryPath),
+                name: dirEntry.name,
+                objectId: writeTree(repoPath, entryPath),
                 type: OBJECT_TYPE_TREE,
             });
         }
@@ -78,7 +90,7 @@ export function writeTree(repoDir:string, directory: string): string {
         '',
     );
 
-    return hashObject(repoDir, Buffer.from(tree), OBJECT_TYPE_TREE);
+    return hashObject(repoPath, Buffer.from(tree), OBJECT_TYPE_TREE);
 }
 
 /**
