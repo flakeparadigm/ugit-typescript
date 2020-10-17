@@ -151,12 +151,44 @@ function getTree(
 }
 
 /**
+ * Remove all the files and directories from a given directory, ignoring any
+ * files ugit is configured to ignore.
+ *
+ * NOTE: This function will still succeed if a directory cannot be removed
+ * because it is not empty. This is to allow for handling of ignores.
+ *
+ * @param repoPath path of the repo root
+ * @param directory absolute path of the director to empty
+ */
+function emptyDirectory(repoPath: string, directory: string): void {
+    forEachFile(repoPath, directory, (dirEntry, entryPath) => {
+        if (dirEntry.isFile()) {
+            fs.unlinkSync(entryPath);
+        } else if (dirEntry.isDirectory()) {
+            emptyDirectory(repoPath, path.join(directory, dirEntry.name));
+
+            try {
+                fs.rmdirSync(entryPath);
+            } catch (err) {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                if (err.code === 'ENOTEMPTY') return; // okay for our purposes
+
+                throw (err);
+            }
+        }
+    });
+}
+
+/**
  * Copy the files from the object store back to their original location
  *
  * @param repoPath path of the repo root
  * @param treeObjectId root object ID to restore from
  */
 export function readTree(repoPath: string, treeObjectId: string): void {
+    // clean out any old files first
+    emptyDirectory(repoPath, repoPath);
+
     const tree = getTree(repoPath, treeObjectId, repoPath);
 
     Object.keys(tree).forEach((filePath) => {
