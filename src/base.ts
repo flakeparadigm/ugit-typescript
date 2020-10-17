@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {
-    getHead,
+    getRef,
     getObject,
     GIT_DIR,
     hashObject,
@@ -9,7 +9,11 @@ import {
     OBJECT_TYPE_BLOB,
     OBJECT_TYPE_COMMIT,
     OBJECT_TYPE_TREE,
-    setHead,
+    updateRef,
+    REF_HEAD,
+    TAGS_DIR,
+    REFS_DIR,
+    HEADS_DIR,
 } from './data';
 import UnexpectedFilenameError from './errors/UnexpectedFilenameError';
 import Commit, { COMMIT_FIELD_PARENT, COMMIT_FIELD_TREE } from './models/commit';
@@ -212,7 +216,7 @@ export function readTree(repoPath: string, treeObjectId: string): void {
  */
 export function commit(repoPath: string, message: string): string {
     const rootObjectId = writeTree(repoPath, repoPath);
-    const HEAD = getHead(repoPath);
+    const HEAD = getRef(repoPath, REF_HEAD);
 
     let commitData = `${COMMIT_FIELD_TREE} ${rootObjectId}\n`;
     if (HEAD) commitData += `${COMMIT_FIELD_PARENT} ${HEAD}\n`;
@@ -224,7 +228,7 @@ export function commit(repoPath: string, message: string): string {
         OBJECT_TYPE_COMMIT,
     );
 
-    setHead(repoPath, commitObjectId);
+    updateRef(repoPath, REF_HEAD, commitObjectId);
     return commitObjectId;
 }
 
@@ -266,5 +270,48 @@ export function getCommit(repoPath: string, commitObjectId: string): Commit {
  */
 export function checkout(repoPath: string, objectId: string): void {
     readTree(repoPath, getCommit(repoPath, objectId).tree);
-    setHead(repoPath, objectId);
+    updateRef(repoPath, REF_HEAD, objectId);
+}
+
+/**
+ * Create a new tag that points to the specified comit
+ *
+ * @param repoPath path of the repo root
+ * @param name tag name to create
+ * @param objectId hash of the commit the tag should point to
+ */
+export function createTag(repoPath: string, name: string, objectId: string): void {
+    updateRef(repoPath, path.join(TAGS_DIR, name), objectId);
+}
+
+/**
+ * Get the Object ID referred to by the given reference
+ *
+ * @param repoPath path of the repo root
+ * @param name reference to convert to an Object ID
+ */
+export function getObjectId(repoPath: string, name: string): string {
+    const refsToTry = [
+        name,
+        path.join(REFS_DIR, name),
+        path.join(TAGS_DIR, name),
+        path.join(HEADS_DIR, name),
+    ];
+
+    // alias '@' to 'HEAD'
+    if (name === '@') refsToTry.unshift(REF_HEAD);
+
+    // check if is a known ref
+    for (const ref of refsToTry) {
+        const objectId = getRef(repoPath, ref);
+
+        if (objectId) return objectId;
+    }
+
+    // check if is valid hex string
+    if (/^[0-9A-Fa-f]{40}$/.test(name)) {
+        return name.toLowerCase();
+    }
+
+    throw new Error(`Unknown name: ${name}`);
 }

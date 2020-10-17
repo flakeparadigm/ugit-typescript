@@ -5,12 +5,16 @@ import UnexpectedTypeError from './errors/UnexpectedTypeError';
 
 export const GIT_DIR = '.ugit';
 const OBJECTS_DIR = 'objects';
-const HEAD_FILE = 'HEAD';
+export const REFS_DIR = 'refs';
+export const TAGS_DIR = path.join(REFS_DIR, 'tags');
+export const HEADS_DIR = path.join(REFS_DIR, 'heads');
 
 export const OBJECT_TYPE_BLOB = 'blob';
 export const OBJECT_TYPE_TREE = 'tree';
 export const OBJECT_TYPE_COMMIT = 'commit';
 export type ObjectType = 'blob' | 'tree' | 'commit';
+
+export const REF_HEAD = 'HEAD';
 
 /**
  * Initialize the ugit repository
@@ -82,31 +86,34 @@ export function getObject(
 }
 
 /**
- * Get the Object ID of the current `HEAD` commit
+ * Get the Object ID of the commit pointed to by the reference
  *
  * @param repoPath path of the repo root
+ * @param ref the reference to get the ID of
  */
-export function getHead(repoPath: string): string|null {
-    const headPath = path.join(repoPath, GIT_DIR, HEAD_FILE);
+export function getRef(repoPath: string, ref: string): string|null {
+    const refPath = path.join(repoPath, GIT_DIR, ref);
 
     try {
-        return fs.readFileSync(headPath).toString().trim();
+        return fs.readFileSync(refPath).toString().trim();
     } catch (err) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        if (err.code !== 'ENOENT') throw (err); // allow nonexistent HEAD file
+        if (err.code !== 'ENOENT') throw (err); // fail gracefully for nonexistent ref
     }
 
     return null;
 }
 
 /**
- * Set the Object ID for `HEAD`
+ * Set the Object ID of the commit pointed to by the reference
  *
  * @param repoPath path of the repo root
+ * @param ref the reference to update
  * @param objectId object ID to save as `HEAD`
  */
-export function setHead(repoPath: string, objectId: string): void {
-    const headPath = path.join(repoPath, GIT_DIR, HEAD_FILE);
+export function updateRef(repoPath: string, ref: string, objectId: string): void {
+    const refPath = path.join(repoPath, GIT_DIR, ref);
 
-    fs.writeFileSync(headPath, Buffer.from(objectId));
+    fs.mkdirSync(path.dirname(refPath), { recursive: true });
+    fs.writeFileSync(refPath, Buffer.from(objectId));
 }

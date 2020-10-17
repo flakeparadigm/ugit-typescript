@@ -23,6 +23,6 @@ export default class CommitCommand implements CommandModule<unknown, CommitArgs>
     public handler(args: Arguments<CommitArgs>): void {
         const commitObjectId = commit(process.cwd(), args.message);
 
-        console.log(`commit ${commitObjectId}`);
+        console.log(commitObjectId);
     }
 }

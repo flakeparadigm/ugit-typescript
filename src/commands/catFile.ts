@@ -19,14 +19,14 @@ type CatFileArgs = {
 };
 
 export default class CatFileCommand implements CommandModule<unknown, CatFileArgs> {
-    public command = 'cat-file <object> [type]';
+    public command = 'cat-file <object> [<type>]';
 
     public description = 'print an object from the object store';
 
     public builder(yargs: Argv): Argv<CatFileArgs> {
         return yargs
             .positional('object', {
-                description: 'hash of the object to print',
+                description: 'ref or hash of the object to print',
                 type: 'string',
             })
             .positional('type', {
