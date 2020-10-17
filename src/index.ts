@@ -1,6 +1,7 @@
 import yargs from 'yargs';
 import InitCommand from './commands/init';
 import CommitCommand from './commands/commit';
+import LogCommand from './commands/log';
 import HashObjectCommand from './commands/hashObject';
 import CatFileCommand from './commands/catFile';
 import WriteTreeCommand from './commands/writeTree';
@@ -10,6 +11,7 @@ import ReadTreeCommand from './commands/readTree';
 yargs // eslint-disable-line
     .command(new InitCommand())
     .command(new CommitCommand())
+    .command(new LogCommand())
     .command(new HashObjectCommand())
     .command(new CatFileCommand())
     .command(new WriteTreeCommand())

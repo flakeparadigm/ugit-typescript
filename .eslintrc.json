@@ -14,7 +14,7 @@
         "plugin:@typescript-eslint/recommended-requiring-type-checking"
     ],
     "rules": {
-        "indent": ["error", 4],
+        "indent": "off",
         "@typescript-eslint/indent": ["error", 4],
         "class-methods-use-this": "off",
         "no-console": "off"

@@ -12,6 +12,7 @@ import {
     setHead,
 } from './data';
 import UnexpectedFilenameError from './errors/UnexpectedFilenameError';
+import Commit, { COMMIT_FIELD_PARENT, COMMIT_FIELD_TREE } from './models/commit';
 
 type TreeEntry = {
     name: string,
@@ -213,8 +214,8 @@ export function commit(repoPath: string, message: string): string {
     const rootObjectId = writeTree(repoPath, repoPath);
     const HEAD = getHead(repoPath);
 
-    let commitData = `${OBJECT_TYPE_TREE} ${rootObjectId}\n`;
-    if (HEAD) commitData += `parent ${HEAD}\n`;
+    let commitData = `${COMMIT_FIELD_TREE} ${rootObjectId}\n`;
+    if (HEAD) commitData += `${COMMIT_FIELD_PARENT} ${HEAD}\n`;
     commitData += `\n${message}\n`;
 
     const commitObjectId = hashObject(
@@ -225,4 +226,28 @@ export function commit(repoPath: string, message: string): string {
 
     setHead(repoPath, commitObjectId);
     return commitObjectId;
+}
+
+export function getCommit(repoPath: string, commitObjectId: string): Commit {
+    const commitLines = getObject(repoPath, commitObjectId, OBJECT_TYPE_COMMIT)
+        .toString().split('\n');
+    let tree = '';
+    let parent: null|string = null;
+
+    for (let curr = commitLines.shift(); curr; curr = commitLines.shift()) {
+        const [key, value] = curr.split(' ', 2);
+
+        switch (key) {
+            case COMMIT_FIELD_TREE:
+                tree = value;
+                break;
+            case COMMIT_FIELD_PARENT:
+                parent = value;
+                break;
+            default:
+                console.log(`Unexpected field in commit: ${key}=${value}`);
+        }
+    }
+
+    return new Commit(tree, parent, commitLines.join('\n'));
 }
