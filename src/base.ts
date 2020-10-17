@@ -228,6 +228,12 @@ export function commit(repoPath: string, message: string): string {
     return commitObjectId;
 }
 
+/**
+ * Fetch the metadata of a particular commit
+ *
+ * @param repoPath path of the repo root
+ * @param commitObjectId hash of the commit to read information for
+ */
 export function getCommit(repoPath: string, commitObjectId: string): Commit {
     const commitLines = getObject(repoPath, commitObjectId, OBJECT_TYPE_COMMIT)
         .toString().split('\n');
@@ -250,4 +256,15 @@ export function getCommit(repoPath: string, commitObjectId: string): Commit {
     }
 
     return new Commit(tree, parent, commitLines.join('\n'));
+}
+
+/**
+ * Checkout a given commit, updating the workspace to match
+ *
+ * @param repoPath path of the repo root
+ * @param objectId hash of the commit to checkout
+ */
+export function checkout(repoPath: string, objectId: string): void {
+    readTree(repoPath, getCommit(repoPath, objectId).tree);
+    setHead(repoPath, objectId);
 }
