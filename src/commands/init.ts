@@ -1,7 +1,7 @@
 import { CommandModule } from 'yargs';
 import { init } from '../data';
 
-export default class implements CommandModule {
+export default class InitCommand implements CommandModule {
     public command = 'init';
 
     public description = 'create an empty uGit repository';

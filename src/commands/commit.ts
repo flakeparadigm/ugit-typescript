@@ -5,7 +5,7 @@ type CommitArgs = {
     message: string,
 };
 
-export default class implements CommandModule<unknown, CommitArgs> {
+export default class CommitCommand implements CommandModule<unknown, CommitArgs> {
     public command = 'commit [-m <msg>]';
 
     public description = 'record changes to the repository';

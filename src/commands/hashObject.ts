@@ -7,7 +7,7 @@ type HashObjectArgs = {
     file: string
 };
 
-export default class implements CommandModule<unknown, HashObjectArgs> {
+export default class HashObjectCommand implements CommandModule<unknown, HashObjectArgs> {
     public command = 'hash-object <file>';
 
     public description = 'add a file to the object store';

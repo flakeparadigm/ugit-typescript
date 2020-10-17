@@ -5,7 +5,7 @@ type ReadTreeArgs = {
     tree: string,
 };
 
-export default class implements CommandModule<unknown, ReadTreeArgs> {
+export default class ReadTreeCommand implements CommandModule<unknown, ReadTreeArgs> {
     public command = 'read-tree <tree>';
 
     public description = 'read an entire directory structure from the object store';

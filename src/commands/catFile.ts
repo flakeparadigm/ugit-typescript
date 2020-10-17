@@ -18,7 +18,7 @@ type CatFileArgs = {
     type: ObjectType | null,
 };
 
-export default class implements CommandModule<unknown, CatFileArgs> {
+export default class CatFileCommand implements CommandModule<unknown, CatFileArgs> {
     public command = 'cat-file <object> [type]';
 
     public description = 'print an object from the object store';

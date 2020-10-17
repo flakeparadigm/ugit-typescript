@@ -1,7 +1,7 @@
 import { CommandModule } from 'yargs';
 import { writeTree } from '../base';
 
-export default class implements CommandModule {
+export default class WriteTreeCommand implements CommandModule {
     public command = 'write-tree';
 
     public description = 'write the directory structure to the object store';
