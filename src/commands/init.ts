@@ -4,7 +4,7 @@ import { init } from '../data';
 export default class implements CommandModule {
     public command = 'init';
 
-    public description = 'init a ugit repo';
+    public description = 'create an empty uGit repository';
 
     public builder = {};
 

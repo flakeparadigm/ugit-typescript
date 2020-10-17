@@ -13,7 +13,7 @@ export default class implements CommandModule<unknown, ReadTreeArgs> {
     public builder(yargs: Argv): Argv<ReadTreeArgs> {
         return yargs
             .positional('tree', {
-                describe: 'hash of the tree to read',
+                description: 'hash of the tree to read',
                 type: 'string',
             }) as Argv<ReadTreeArgs>;
     }

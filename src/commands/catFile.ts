@@ -24,11 +24,11 @@ export default class implements CommandModule<unknown, CatFileArgs> {
     public builder(yargs: Argv): Argv<CatFileArgs> {
         return yargs
             .positional('object', {
-                describe: 'hash of the object to print',
+                description: 'hash of the object to print',
                 type: 'string',
             })
             .positional('type', {
-                describe: 'validate the retreived object to be this type',
+                description: 'validate the retreived object to be this type',
                 choices: objectTypes,
             }) as Argv<CatFileArgs>;
     }

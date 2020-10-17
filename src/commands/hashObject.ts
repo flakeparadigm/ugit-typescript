@@ -15,7 +15,7 @@ export default class implements CommandModule<unknown, HashObjectArgs> {
     public builder(yargs: Argv): Argv<HashObjectArgs> {
         return yargs
             .positional('file', {
-                describe: 'path of the file to add to the object store',
+                description: 'path of the file to add to the object store',
                 type: 'string',
             }) as Argv<HashObjectArgs>;
     }
