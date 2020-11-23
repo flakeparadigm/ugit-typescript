@@ -6,6 +6,7 @@ import CheckoutCommand from './commands/checkout';
 import CommitCommand from './commands/commit';
 import LogCommand from './commands/log';
 import TagCommand from './commands/tag';
+import KCommand from './commands/k';
 
 import HashObjectCommand from './commands/hashObject';
 import CatFileCommand from './commands/catFile';
@@ -21,6 +22,7 @@ yargs // eslint-disable-line
     .command(new CommitCommand())
     .command(new LogCommand())
     .command(new TagCommand())
+    .command(new KCommand())
 
     // test & prototype commands
     .command(new HashObjectCommand())

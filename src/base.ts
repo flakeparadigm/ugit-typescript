@@ -315,3 +315,27 @@ export function getObjectId(repoPath: string, name: string): string {
 
     throw new Error(`Unknown name: ${name}`);
 }
+
+/**
+ * Iterate through all the commits in the history of the provided object IDs
+ *
+ * @param repoPath path of the repo root
+ * @param objectIds a set of object IDs to iterate through
+ */
+export function* getCommitsAndParents(
+    repoPath: string,
+    objectIds: Set<string>,
+): Generator<string> {
+    const oidSet = new Set(objectIds);
+    const visited = new Set();
+
+    for (const objectId of oidSet) {
+        if (!visited.has(objectId)) {
+            visited.add(objectId);
+            yield objectId;
+
+            const { parent } = getCommit(repoPath, objectId);
+            if (parent) oidSet.add(parent);
+        }
+    }
+}

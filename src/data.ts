@@ -117,3 +117,41 @@ export function updateRef(repoPath: string, ref: string, objectId: string): void
     fs.mkdirSync(path.dirname(refPath), { recursive: true });
     fs.writeFileSync(refPath, Buffer.from(objectId));
 }
+
+/**
+ * Iterate through all of the files in the given directory recursively,
+ * yielding file paths relative to the given output base.
+ *
+ * @param dirPath starting directory
+ * @param outputBase base path for all filenames to be relative to
+ */
+function* walkDirectory(dirPath: string, outputBase = ''): Generator<string> {
+    for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+        if (entry.isDirectory()) {
+            // recurse into directories
+            yield* walkDirectory(
+                path.join(dirPath, entry.name),
+                path.join(outputBase, entry.name),
+            );
+        } else {
+            yield path.join(outputBase, entry.name);
+        }
+    }
+}
+
+/**
+ * Iterate through all the refs stored by ugit
+ *
+ * @param repoPath path of the repo root
+ */
+export function* iterRefs(repoPath: string): Generator<[string, string|null]> {
+    // always include HEAD
+    yield [REF_HEAD, getRef(repoPath, REF_HEAD)];
+
+    for (
+        const refName
+        of walkDirectory(path.join(repoPath, GIT_DIR, REFS_DIR), REFS_DIR)
+    ) {
+        yield [refName, getRef(repoPath, refName)];
+    }
+}
