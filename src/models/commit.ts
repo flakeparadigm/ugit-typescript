@@ -2,13 +2,21 @@ export const COMMIT_FIELD_TREE = 'tree';
 export const COMMIT_FIELD_PARENT = 'parent';
 
 export default class Commit {
-    public tree: string;
+    public readonly objectId: string;
 
-    public parent: string|null;
+    public readonly tree: string;
 
-    public message: string;
+    public readonly parent: string|null;
 
-    constructor(tree: string, parent: string|null, message: string) {
+    public readonly message: string;
+
+    constructor(
+        objectId: string,
+        tree: string,
+        parent: string|null,
+        message: string,
+    ) {
+        this.objectId = objectId;
         this.tree = tree;
         this.parent = parent;
         this.message = message;

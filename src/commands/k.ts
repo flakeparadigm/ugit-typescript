@@ -1,6 +1,6 @@
 import { spawn } from 'child_process';
 import { CommandModule } from 'yargs';
-import { getCommit, getCommitsAndParents } from '../base';
+import { getCommit, iterCommitsAndParents } from '../base';
 import { iterRefs } from '../data';
 
 export default class KCommand implements CommandModule {
@@ -26,7 +26,7 @@ export default class KCommand implements CommandModule {
         }
 
         // handle the commit objects
-        for (const objectId of getCommitsAndParents(repoPath, objectIds)) {
+        for (const objectId of iterCommitsAndParents(repoPath, objectIds)) {
             const { parent } = getCommit(repoPath, objectId);
 
             dot += `"${objectId}" [shape=box style=filled label="${objectId.substr(0, 10)}"]\n`;

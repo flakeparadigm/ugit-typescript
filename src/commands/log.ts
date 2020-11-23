@@ -1,5 +1,5 @@
 import { Arguments, Argv, CommandModule } from 'yargs';
-import { getCommit } from '../base';
+import { getCommit, iterCommitsAndParents } from '../base';
 
 type LogArgs = {
     object: string,
@@ -20,18 +20,17 @@ export default class LogCommand implements CommandModule<unknown, LogArgs> {
     }
 
     public handler(args: Arguments<LogArgs>): void {
-        let objectId: string|null = args.object;
+        const repoPath = process.cwd();
+        const objectIds = new Set([args.object]);
 
-        while (objectId) {
-            const commit = getCommit(process.cwd(), objectId);
+        for (const objectId of iterCommitsAndParents(repoPath, objectIds)) {
+            const commit = getCommit(repoPath, objectId);
 
-            console.log(`commit ${objectId}`);
+            console.log(`commit ${commit.objectId}`);
             console.group();
             console.log(commit.message);
             console.groupEnd();
             console.log('');
-
-            objectId = commit.parent;
         }
     }
 }

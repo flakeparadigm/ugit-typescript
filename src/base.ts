@@ -259,7 +259,7 @@ export function getCommit(repoPath: string, commitObjectId: string): Commit {
         }
     }
 
-    return new Commit(tree, parent, commitLines.join('\n'));
+    return new Commit(commitObjectId, tree, parent, commitLines.join('\n'));
 }
 
 /**
@@ -322,7 +322,7 @@ export function getObjectId(repoPath: string, name: string): string {
  * @param repoPath path of the repo root
  * @param objectIds a set of object IDs to iterate through
  */
-export function* getCommitsAndParents(
+export function* iterCommitsAndParents(
     repoPath: string,
     objectIds: Set<string>,
 ): Generator<string> {
