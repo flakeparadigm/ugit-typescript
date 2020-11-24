@@ -3,24 +3,24 @@ import { checkout } from '../base';
 import { REF_HEAD_NAME } from '../data';
 
 type CheckoutArgs = {
-    object: string,
+    name: string,
 };
 
 export default class CheckoutCommand implements CommandModule<unknown, CheckoutArgs> {
-    public command = 'checkout <object>';
+    public command = 'checkout <name>';
 
     public description = 'switch HEAD to the given object, updaing the working directory';
 
     public builder(yargs: Argv): Argv<CheckoutArgs> {
         return yargs
-            .positional('object', {
-                description: 'ref or hash of commit to switch to',
+            .positional('name', {
+                description: 'ref or hash of commit/branch to switch to',
                 type: 'string',
             }) as Argv<CheckoutArgs>;
     }
 
     public handler(args: Arguments<CheckoutArgs>): void {
-        checkout(process.cwd(), args.object);
-        console.log(`${REF_HEAD_NAME} set to ${args.object}`);
+        checkout(process.cwd(), args.name);
+        console.log(`${REF_HEAD_NAME} set to ${args.name}`);
     }
 }

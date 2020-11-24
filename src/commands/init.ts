@@ -1,5 +1,5 @@
 import { CommandModule } from 'yargs';
-import { init } from '../data';
+import { init } from '../base';
 
 export default class InitCommand implements CommandModule {
     public command = 'init';

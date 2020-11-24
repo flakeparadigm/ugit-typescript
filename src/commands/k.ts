@@ -18,9 +18,11 @@ export default class KCommand implements CommandModule {
         // handle the named refs
         for (const [refName, ref] of iterRefs(repoPath, false)) {
             dot += `"${refName}" [shape=note]\n`;
-            dot += `"${refName}" -> "${ref.value}"\n`;
 
-            if (!ref.symbolic) objectIds.add(ref.value);
+            if (ref.value) {
+                dot += `"${refName}" -> "${ref.value}"\n`;
+                if (!ref.symbolic) objectIds.add(ref.value);
+            }
         }
 
         // handle the commit objects

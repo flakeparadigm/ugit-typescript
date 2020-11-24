@@ -3,7 +3,6 @@ import path from 'path';
 import crypto from 'crypto';
 import UnexpectedTypeError from './errors/UnexpectedTypeError';
 import Ref from './models/ref';
-import UnknownRefError from './errors/UnknownRefError';
 
 export const GIT_DIR = '.ugit';
 const OBJECTS_DIR = 'objects';
@@ -17,7 +16,6 @@ export const OBJECT_TYPE_COMMIT = 'commit';
 export type ObjectType = 'blob' | 'tree' | 'commit';
 
 export const REF_HEAD_NAME = 'HEAD';
-export const REF_HEAD = new Ref(REF_HEAD_NAME);
 const SYM_REF_HEADER = 'ref:';
 
 /**
@@ -104,24 +102,25 @@ function getRefInternal(
     deref = true,
 ): [string, Ref] {
     const refPath = path.join(repoPath, GIT_DIR, refStr);
+    let value: string|null;
+    let symbolic = false;
 
     try {
-        let value = fs.readFileSync(refPath).toString().trim();
-        const symbolic = value.startsWith(SYM_REF_HEADER);
+        value = fs.readFileSync(refPath).toString().trim();
+        symbolic = value.startsWith(SYM_REF_HEADER);
 
         if (symbolic) {
             value = value.split(':').slice(1).join(':').trim();
             if (deref) return getRefInternal(repoPath, value, deref);
         }
-
-        return [refStr, new Ref(value, symbolic)];
     } catch (err) {
         // Covert nonexistent file error to a custom type.
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         if (err.code !== 'ENOENT') throw (err);
-
-        throw new UnknownRefError();
+        value = null;
     }
+
+    return [refStr, new Ref(value, symbolic)];
 }
 
 /**
@@ -137,7 +136,7 @@ export function getRef(repoPath: string, refStr: string, deref = true): Ref {
 }
 
 /**
- * Set the Object ID of the commit pointed to by the reference
+ * Update where a reference points to, creating it if it doesn't exist
  *
  * @param repoPath path of the repo root
  * @param ref the reference to update
@@ -150,7 +149,7 @@ export function updateRef(
     destRef: Ref,
     deref = true,
 ): void {
-    const ref = getRefInternal(repoPath, refStr, deref)[0];
+    const ref = getRefInternal(repoPath, refStr, deref)[0] || refStr;
     const refPath = path.join(repoPath, GIT_DIR, ref);
 
     // add header to symbolic reference values before storing
