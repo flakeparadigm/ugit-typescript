@@ -10,13 +10,15 @@ import {
     OBJECT_TYPE_COMMIT,
     OBJECT_TYPE_TREE,
     updateRef,
-    REF_HEAD,
+    REF_HEAD_NAME,
     TAGS_DIR,
     REFS_DIR,
     HEADS_DIR,
 } from './data';
 import UnexpectedFilenameError from './errors/UnexpectedFilenameError';
+import UnknownRefError from './errors/UnknownRefError';
 import Commit, { COMMIT_FIELD_PARENT, COMMIT_FIELD_TREE } from './models/commit';
+import Ref from './models/ref';
 
 type TreeEntry = {
     name: string,
@@ -216,10 +218,16 @@ export function readTree(repoPath: string, treeObjectId: string): void {
  */
 export function commit(repoPath: string, message: string): string {
     const rootObjectId = writeTree(repoPath, repoPath);
-    const HEAD = getRef(repoPath, REF_HEAD);
-
     let commitData = `${COMMIT_FIELD_TREE} ${rootObjectId}\n`;
-    if (HEAD) commitData += `${COMMIT_FIELD_PARENT} ${HEAD}\n`;
+
+    try {
+        const HEAD = getRef(repoPath, REF_HEAD_NAME);
+        commitData += `${COMMIT_FIELD_PARENT} ${HEAD.value}\n`;
+    } catch (e) {
+        // assume first commit
+        if (!(e instanceof UnknownRefError)) throw e;
+    }
+
     commitData += `\n${message}\n`;
 
     const commitObjectId = hashObject(
@@ -228,7 +236,7 @@ export function commit(repoPath: string, message: string): string {
         OBJECT_TYPE_COMMIT,
     );
 
-    updateRef(repoPath, REF_HEAD, commitObjectId);
+    updateRef(repoPath, REF_HEAD_NAME, new Ref(commitObjectId));
     return commitObjectId;
 }
 
@@ -270,18 +278,29 @@ export function getCommit(repoPath: string, commitObjectId: string): Commit {
  */
 export function checkout(repoPath: string, objectId: string): void {
     readTree(repoPath, getCommit(repoPath, objectId).tree);
-    updateRef(repoPath, REF_HEAD, objectId);
+    updateRef(repoPath, REF_HEAD_NAME, new Ref(objectId));
 }
 
 /**
- * Create a new tag that points to the specified comit
+ * Create a new tag that points to the specified commit
  *
  * @param repoPath path of the repo root
  * @param name tag name to create
  * @param objectId hash of the commit the tag should point to
  */
 export function createTag(repoPath: string, name: string, objectId: string): void {
-    updateRef(repoPath, path.join(TAGS_DIR, name), objectId);
+    updateRef(repoPath, path.join(TAGS_DIR, name), new Ref(objectId));
+}
+
+/**
+ * Create a new branch that points to the specified commit
+ *
+ * @param repoPath path of the repo root
+ * @param name tag name to create
+ * @param objectId hash of the commit the tag should point to
+ */
+export function createBranch(repoPath: string, name: string, objectId: string): void {
+    updateRef(repoPath, path.join(HEADS_DIR, name), new Ref(objectId));
 }
 
 /**
@@ -299,13 +318,16 @@ export function getObjectId(repoPath: string, name: string): string {
     ];
 
     // alias '@' to 'HEAD'
-    if (name === '@') refsToTry.unshift(REF_HEAD);
+    if (name === '@') refsToTry.unshift(REF_HEAD_NAME);
 
     // check if is a known ref
-    for (const ref of refsToTry) {
-        const objectId = getRef(repoPath, ref);
-
-        if (objectId) return objectId;
+    for (const tryRef of refsToTry) {
+        try {
+            return getRef(repoPath, tryRef, false).value;
+        } catch (e) {
+            // ignore nonexistent ref
+            if (!(e instanceof UnknownRefError)) throw e;
+        }
     }
 
     // check if is valid hex string

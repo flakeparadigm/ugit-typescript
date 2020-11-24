@@ -1,6 +1,6 @@
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { checkout } from '../base';
-import { REF_HEAD } from '../data';
+import { REF_HEAD_NAME } from '../data';
 
 type CheckoutArgs = {
     object: string,
@@ -21,6 +21,6 @@ export default class CheckoutCommand implements CommandModule<unknown, CheckoutA
 
     public handler(args: Arguments<CheckoutArgs>): void {
         checkout(process.cwd(), args.object);
-        console.log(`${REF_HEAD} set to ${args.object}`);
+        console.log(`${REF_HEAD_NAME} set to ${args.object}`);
     }
 }

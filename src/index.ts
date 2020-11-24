@@ -5,6 +5,7 @@ import InitCommand from './commands/init';
 import CheckoutCommand from './commands/checkout';
 import CommitCommand from './commands/commit';
 import LogCommand from './commands/log';
+import BranchCommand from './commands/branch';
 import TagCommand from './commands/tag';
 import KCommand from './commands/k';
 
@@ -22,6 +23,7 @@ yargs // eslint-disable-line
     .command(new CommitCommand())
     .command(new LogCommand())
     .command(new TagCommand())
+    .command(new BranchCommand())
     .command(new KCommand())
 
     // test & prototype commands

@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import UnexpectedTypeError from './errors/UnexpectedTypeError';
+import Ref from './models/ref';
+import UnknownRefError from './errors/UnknownRefError';
 
 export const GIT_DIR = '.ugit';
 const OBJECTS_DIR = 'objects';
@@ -14,7 +16,9 @@ export const OBJECT_TYPE_TREE = 'tree';
 export const OBJECT_TYPE_COMMIT = 'commit';
 export type ObjectType = 'blob' | 'tree' | 'commit';
 
-export const REF_HEAD = 'HEAD';
+export const REF_HEAD_NAME = 'HEAD';
+export const REF_HEAD = new Ref(REF_HEAD_NAME);
+const SYM_REF_HEADER = 'ref:';
 
 /**
  * Initialize the ugit repository
@@ -86,22 +90,50 @@ export function getObject(
 }
 
 /**
+ * Internal getRef function which handles both getting the lowest level ref
+ * string, as well as the actual reference object
+ *
+ * @param repoPath path of the repo root
+ * @param refStr the reference to get the information for
+ * @param deref should symbolic references be completely dereferenced
+ * @throws UnknownRefError when the requested references cannot be found
+ */
+function getRefInternal(
+    repoPath: string,
+    refStr: string,
+    deref = true,
+): [string, Ref] {
+    const refPath = path.join(repoPath, GIT_DIR, refStr);
+
+    try {
+        let value = fs.readFileSync(refPath).toString().trim();
+        const symbolic = value.startsWith(SYM_REF_HEADER);
+
+        if (symbolic) {
+            value = value.split(':').slice(1).join(':').trim();
+            if (deref) return getRefInternal(repoPath, value, deref);
+        }
+
+        return [refStr, new Ref(value, symbolic)];
+    } catch (err) {
+        // Covert nonexistent file error to a custom type.
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        if (err.code !== 'ENOENT') throw (err);
+
+        throw new UnknownRefError();
+    }
+}
+
+/**
  * Get the Object ID of the commit pointed to by the reference
  *
  * @param repoPath path of the repo root
- * @param ref the reference to get the ID of
+ * @param refStr the reference to get the ID of
+ * @param deref should symbolic references be completely dereferenced
+ * @throws UnknownRefError when the requested references cannot be found
  */
-export function getRef(repoPath: string, ref: string): string|null {
-    const refPath = path.join(repoPath, GIT_DIR, ref);
-
-    try {
-        return fs.readFileSync(refPath).toString().trim();
-    } catch (err) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        if (err.code !== 'ENOENT') throw (err); // fail gracefully for nonexistent ref
-    }
-
-    return null;
+export function getRef(repoPath: string, refStr: string, deref = true): Ref {
+    return getRefInternal(repoPath, refStr, deref)[1];
 }
 
 /**
@@ -110,12 +142,24 @@ export function getRef(repoPath: string, ref: string): string|null {
  * @param repoPath path of the repo root
  * @param ref the reference to update
  * @param objectId object ID to save as `HEAD`
+ * @param deref should symbolic references be completely dereferenced
  */
-export function updateRef(repoPath: string, ref: string, objectId: string): void {
+export function updateRef(
+    repoPath: string,
+    refStr: string,
+    destRef: Ref,
+    deref = true,
+): void {
+    const ref = getRefInternal(repoPath, refStr, deref)[0];
     const refPath = path.join(repoPath, GIT_DIR, ref);
 
+    // add header to symbolic reference values before storing
+    let { value: newValue } = destRef;
+    if (!newValue) throw new Error('Unexpected empty ref value');
+    if (destRef.symbolic) newValue = `${SYM_REF_HEADER} ${newValue}`;
+
     fs.mkdirSync(path.dirname(refPath), { recursive: true });
-    fs.writeFileSync(refPath, Buffer.from(objectId));
+    fs.writeFileSync(refPath, Buffer.from(newValue));
 }
 
 /**
@@ -143,15 +187,19 @@ function* walkDirectory(dirPath: string, outputBase = ''): Generator<string> {
  * Iterate through all the refs stored by ugit
  *
  * @param repoPath path of the repo root
+ * @param deref should symbolic references be completely dereferenced
  */
-export function* iterRefs(repoPath: string): Generator<[string, string|null]> {
+export function* iterRefs(
+    repoPath: string,
+    deref = true,
+): Generator<[string, Ref]> {
     // always include HEAD
-    yield [REF_HEAD, getRef(repoPath, REF_HEAD)];
+    yield [REF_HEAD_NAME, getRef(repoPath, REF_HEAD_NAME, deref)];
 
     for (
         const refName
         of walkDirectory(path.join(repoPath, GIT_DIR, REFS_DIR), REFS_DIR)
     ) {
-        yield [refName, getRef(repoPath, refName)];
+        yield [refName, getRef(repoPath, refName, deref)];
     }
 }

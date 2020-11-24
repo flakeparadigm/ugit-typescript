@@ -16,20 +16,18 @@ export default class KCommand implements CommandModule {
         let dot = 'digraph commits {\n';
 
         // handle the named refs
-        for (const [refName, objectId] of iterRefs(repoPath)) {
+        for (const [refName, ref] of iterRefs(repoPath, false)) {
             dot += `"${refName}" [shape=note]\n`;
+            dot += `"${refName}" -> "${ref.value}"\n`;
 
-            if (objectId) {
-                dot += `"${refName}" -> "${objectId}"\n`;
-                objectIds.add(objectId);
-            }
+            if (!ref.symbolic) objectIds.add(ref.value);
         }
 
         // handle the commit objects
         for (const objectId of iterCommitsAndParents(repoPath, objectIds)) {
             const { parent } = getCommit(repoPath, objectId);
 
-            dot += `"${objectId}" [shape=box style=filled label="${objectId.substr(0, 10)}"]\n`;
+            dot += `"${objectId}" [shape=box style=filled label="${objectId.substring(0, 10)}"]\n`;
             if (parent) {
                 dot += `"${objectId}" -> "${parent}"\n`;
             }
