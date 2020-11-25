@@ -1,5 +1,6 @@
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { createBranch } from '../base';
+import { REF_HEAD_ALIAS } from '../const';
 
 type BranchArgs = {
     branchname: string,
@@ -18,7 +19,7 @@ export default class BranchCommand implements CommandModule<unknown, BranchArgs>
                 type: 'string',
             })
             .positional('object', {
-                default: '@',
+                default: REF_HEAD_ALIAS,
                 description: 'ref or hash of commit to use as head of branch',
                 type: 'string',
             }) as Argv<BranchArgs>;

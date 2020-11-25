@@ -1,5 +1,17 @@
 import fs from 'fs';
 import path from 'path';
+import {
+    GIT_DIR,
+    HEADS_DIR,
+    ObjectType,
+    OBJECT_TYPE_BLOB,
+    OBJECT_TYPE_COMMIT,
+    OBJECT_TYPE_TREE,
+    REFS_DIR,
+    REF_HEAD_ALIAS,
+    REF_HEAD_NAME,
+    TAGS_DIR,
+} from './const';
 import * as data from './data';
 import UnexpectedFilenameError from './errors/UnexpectedFilenameError';
 import Commit, { COMMIT_FIELD_PARENT, COMMIT_FIELD_TREE } from './models/commit';
@@ -8,7 +20,7 @@ import Ref from './models/ref';
 type TreeEntry = {
     name: string,
     objectId: string,
-    type: data.ObjectType,
+    type: ObjectType,
 };
 
 const DEFAULT_BRANCH = 'main';
@@ -21,7 +33,7 @@ const DEFAULT_BRANCH = 'main';
 function isIgnored(repoPath: string, checkPath: string): boolean {
     const parts = path.relative(repoPath, checkPath).split(path.sep);
     const ignored = [
-        data.GIT_DIR,
+        GIT_DIR,
         '.git',
         'node_modules',
         'dist',
@@ -62,8 +74,8 @@ export function init(repoPath: string): void {
     data.init(repoPath);
     data.updateRef(
         repoPath,
-        data.REF_HEAD_NAME,
-        new Ref(path.join(data.HEADS_DIR, DEFAULT_BRANCH), true),
+        REF_HEAD_NAME,
+        new Ref(path.join(HEADS_DIR, DEFAULT_BRANCH), true),
     );
 }
 
@@ -86,15 +98,15 @@ export function writeTree(repoPath: string, directory: string): string {
                 objectId: data.hashObject(
                     repoPath,
                     objectData,
-                    data.OBJECT_TYPE_BLOB,
+                    OBJECT_TYPE_BLOB,
                 ),
-                type: data.OBJECT_TYPE_BLOB,
+                type: OBJECT_TYPE_BLOB,
             });
         } else if (dirEntry.isDirectory()) {
             entries.push({
                 name: dirEntry.name,
                 objectId: writeTree(repoPath, entryPath),
-                type: data.OBJECT_TYPE_TREE,
+                type: OBJECT_TYPE_TREE,
             });
         }
     });
@@ -105,7 +117,7 @@ export function writeTree(repoPath: string, directory: string): string {
         '',
     );
 
-    return data.hashObject(repoPath, Buffer.from(tree), data.OBJECT_TYPE_TREE);
+    return data.hashObject(repoPath, Buffer.from(tree), OBJECT_TYPE_TREE);
 }
 
 /**
@@ -118,14 +130,14 @@ function getTreeEntries(
     repoPath: string,
     treeObjectId: string,
 ): TreeEntry[] {
-    const tree = data.getObject(repoPath, treeObjectId, data.OBJECT_TYPE_TREE)
+    const tree = data.getObject(repoPath, treeObjectId, OBJECT_TYPE_TREE)
         .toString()
         .split('\n')
         .filter((entryStr) => entryStr.length > 0);
 
     return tree.map((entryStr): TreeEntry => {
         const [type, objectId, name] = entryStr.split(' ', 3);
-        return { type: type as data.ObjectType, objectId, name };
+        return { type: type as ObjectType, objectId, name };
     });
 }
 
@@ -155,9 +167,9 @@ function getTree(
 
         const objectPath = path.join(basePath, name);
 
-        if (type === data.OBJECT_TYPE_BLOB) {
+        if (type === OBJECT_TYPE_BLOB) {
             result[objectPath] = objectId;
-        } else if (type === data.OBJECT_TYPE_TREE) {
+        } else if (type === OBJECT_TYPE_TREE) {
             Object.assign(result, getTree(repoPath, objectId, objectPath));
         }
     });
@@ -210,7 +222,7 @@ export function readTree(repoPath: string, treeObjectId: string): void {
         fs.mkdirSync(path.dirname(filePath), { recursive: true });
         fs.writeFileSync(
             filePath,
-            data.getObject(repoPath, tree[filePath], data.OBJECT_TYPE_BLOB),
+            data.getObject(repoPath, tree[filePath], OBJECT_TYPE_BLOB),
         );
     });
 }
@@ -225,7 +237,7 @@ export function commit(repoPath: string, message: string): string {
     const rootObjectId = writeTree(repoPath, repoPath);
     let commitData = `${COMMIT_FIELD_TREE} ${rootObjectId}\n`;
 
-    const { value: HEAD } = data.getRef(repoPath, data.REF_HEAD_NAME);
+    const { value: HEAD } = data.getRef(repoPath, REF_HEAD_NAME);
     if (HEAD) commitData += `${COMMIT_FIELD_PARENT} ${HEAD}\n`;
 
     commitData += `\n${message}\n`;
@@ -233,10 +245,10 @@ export function commit(repoPath: string, message: string): string {
     const commitObjectId = data.hashObject(
         repoPath,
         Buffer.from(commitData),
-        data.OBJECT_TYPE_COMMIT,
+        OBJECT_TYPE_COMMIT,
     );
 
-    data.updateRef(repoPath, data.REF_HEAD_NAME, new Ref(commitObjectId));
+    data.updateRef(repoPath, REF_HEAD_NAME, new Ref(commitObjectId));
     return commitObjectId;
 }
 
@@ -248,7 +260,7 @@ export function commit(repoPath: string, message: string): string {
  */
 export function getCommit(repoPath: string, commitObjectId: string): Commit {
     const commitLines = data
-        .getObject(repoPath, commitObjectId, data.OBJECT_TYPE_COMMIT)
+        .getObject(repoPath, commitObjectId, OBJECT_TYPE_COMMIT)
         .toString()
         .split('\n');
     let tree = '';
@@ -279,7 +291,7 @@ export function getCommit(repoPath: string, commitObjectId: string): Commit {
  * @param branch the branch name to check for (not including `refs/heads`)
  */
 function isBranch(repoPath: string, branch: string): boolean {
-    return !!data.getRef(repoPath, path.join(data.HEADS_DIR, branch)).value;
+    return !!data.getRef(repoPath, path.join(HEADS_DIR, branch)).value;
 }
 
 /**
@@ -295,12 +307,12 @@ export function checkout(repoPath: string, name: string): void {
     readTree(repoPath, getCommit(repoPath, objectId).tree);
 
     if (isBranch(repoPath, name)) {
-        headRef = new Ref(path.join(data.HEADS_DIR, name), true);
+        headRef = new Ref(path.join(HEADS_DIR, name), true);
     } else {
         headRef = new Ref(objectId, false);
     }
 
-    data.updateRef(repoPath, data.REF_HEAD_NAME, headRef, false);
+    data.updateRef(repoPath, REF_HEAD_NAME, headRef, false);
 }
 
 /**
@@ -311,7 +323,7 @@ export function checkout(repoPath: string, name: string): void {
  * @param objectId hash of the commit the tag should point to
  */
 export function createTag(repoPath: string, name: string, objectId: string): void {
-    data.updateRef(repoPath, path.join(data.TAGS_DIR, name), new Ref(objectId));
+    data.updateRef(repoPath, path.join(TAGS_DIR, name), new Ref(objectId));
 }
 
 /**
@@ -324,7 +336,7 @@ export function createTag(repoPath: string, name: string, objectId: string): voi
 export function createBranch(repoPath: string, name: string, objectId: string): void {
     data.updateRef(
         repoPath,
-        path.join(data.HEADS_DIR, name),
+        path.join(HEADS_DIR, name),
         new Ref(objectId),
     );
 }
@@ -336,14 +348,14 @@ export function createBranch(repoPath: string, name: string, objectId: string): 
  * @param nameToTry reference to convert to an Object ID
  */
 export function getObjectId(repoPath: string, name: string): string {
-    // alias '@' to 'HEAD'
-    const nameToTry = name === '@' ? data.REF_HEAD_NAME : name;
+    // apply alias for 'HEAD'
+    const nameToTry = name === REF_HEAD_ALIAS ? REF_HEAD_NAME : name;
 
     const refsToTry = [
         nameToTry,
-        path.join(data.REFS_DIR, nameToTry),
-        path.join(data.TAGS_DIR, nameToTry),
-        path.join(data.HEADS_DIR, nameToTry),
+        path.join(REFS_DIR, nameToTry),
+        path.join(TAGS_DIR, nameToTry),
+        path.join(HEADS_DIR, nameToTry),
     ];
 
     // check if is a known ref

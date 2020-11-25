@@ -1,11 +1,11 @@
 import { Arguments, Argv, CommandModule } from 'yargs';
+import { getObject } from '../data';
 import {
-    getObject,
     ObjectType,
     OBJECT_TYPE_BLOB,
     OBJECT_TYPE_COMMIT,
     OBJECT_TYPE_TREE,
-} from '../data';
+} from '../const';
 
 const objectTypes: ReadonlyArray<ObjectType> = [
     OBJECT_TYPE_BLOB,

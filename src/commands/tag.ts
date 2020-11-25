@@ -1,5 +1,6 @@
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { createTag } from '../base';
+import { REF_HEAD_ALIAS } from '../const';
 
 type TagArgs = {
     tagname: string,
@@ -18,7 +19,7 @@ export default class TagCommand implements CommandModule<unknown, TagArgs> {
                 type: 'string',
             })
             .positional('object', {
-                default: '@',
+                default: REF_HEAD_ALIAS,
                 description: 'ref or hash of commit to tag',
                 type: 'string',
             }) as Argv<TagArgs>;

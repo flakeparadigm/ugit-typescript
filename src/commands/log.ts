@@ -1,5 +1,6 @@
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { getCommit, iterCommitsAndParents } from '../base';
+import { REF_HEAD_ALIAS } from '../const';
 
 type LogArgs = {
     object: string,
@@ -13,7 +14,7 @@ export default class LogCommand implements CommandModule<unknown, LogArgs> {
     public builder(yargs: Argv): Argv<LogArgs> {
         return yargs
             .positional('object', {
-                default: '@',
+                default: REF_HEAD_ALIAS,
                 description: 'ref or hash of object to start the log from',
                 type: 'string',
             }) as Argv<LogArgs>;

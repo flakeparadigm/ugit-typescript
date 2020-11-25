@@ -1,6 +1,6 @@
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { checkout } from '../base';
-import { REF_HEAD_NAME } from '../data';
+import { REF_HEAD_NAME } from '../const';
 
 type CheckoutArgs = {
     name: string,
