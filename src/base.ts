@@ -413,3 +413,12 @@ export function getBranchName(repoPath: string): string|null {
 
     return path.relative(HEADS_DIR, HEAD.value);
 }
+
+export function* iterBranchNames(repoPath: string): Generator<string> {
+    for (
+        const [refName]
+        of data.iterRefs(repoPath, true, `${HEADS_DIR}${path.sep}`)
+    ) {
+        yield path.relative(HEADS_DIR, refName);
+    }
+}

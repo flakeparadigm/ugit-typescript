@@ -1,5 +1,5 @@
 import { Arguments, Argv, CommandModule } from 'yargs';
-import { createBranch } from '../base';
+import { createBranch, getBranchName, iterBranchNames } from '../base';
 import { REF_HEAD_ALIAS } from '../const';
 
 type BranchArgs = {
@@ -8,9 +8,9 @@ type BranchArgs = {
 };
 
 export default class BranchCommand implements CommandModule<unknown, BranchArgs> {
-    public command = 'branch <branchname> [<object>]';
+    public command = 'branch [<branchname> [<object>]]';
 
-    public description = 'create a branch from the specified commit object';
+    public description = 'list branches or create a new branch if specified';
 
     public builder(yargs: Argv): Argv<BranchArgs> {
         return yargs
@@ -26,6 +26,15 @@ export default class BranchCommand implements CommandModule<unknown, BranchArgs>
     }
 
     public handler(args: Arguments<BranchArgs>): void {
-        createBranch(process.cwd(), args.branchname, args.object);
+        const repoPath = process.cwd();
+
+        if (!args.branchname) {
+            const current = getBranchName(repoPath);
+            for (const branch of iterBranchNames(repoPath)) {
+                console.log(`${branch === current ? '*' : ' '} ${branch}`);
+            }
+        } else {
+            createBranch(repoPath, args.branchname, args.object);
+        }
     }
 }

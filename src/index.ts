@@ -34,6 +34,7 @@ yargs // eslint-disable-line
     .command(new WriteTreeCommand())
     .command(new ReadTreeCommand())
 
+    .wrap(yargs.terminalWidth())
     .coerce('object', (ref: string) => getObjectId(process.cwd(), ref))
     .demandCommand(1, 1, 'You must specify a command from above')
     .help()

@@ -187,14 +187,19 @@ function* walkDirectory(dirPath: string, outputBase = ''): Generator<string> {
 export function* iterRefs(
     repoPath: string,
     deref = true,
+    prefix = '',
 ): Generator<[string, Ref]> {
-    // always include HEAD
-    yield [REF_HEAD_NAME, getRef(repoPath, REF_HEAD_NAME, deref)];
+    if (REF_HEAD_NAME.startsWith(prefix)) {
+        // include HEAD
+        yield [REF_HEAD_NAME, getRef(repoPath, REF_HEAD_NAME, deref)];
+    }
 
     for (
         const refName
         of walkDirectory(path.join(repoPath, GIT_DIR, REFS_DIR), REFS_DIR)
     ) {
-        yield [refName, getRef(repoPath, refName, deref)];
+        if (refName.startsWith(prefix)) {
+            yield [refName, getRef(repoPath, refName, deref)];
+        }
     }
 }
