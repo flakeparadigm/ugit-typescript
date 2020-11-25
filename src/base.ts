@@ -396,3 +396,20 @@ export function* iterCommitsAndParents(
         }
     }
 }
+
+/**
+ * Return the name of the currently tracked branch, if any
+ *
+ * @param repoPath path of the repo root
+ */
+export function getBranchName(repoPath: string): string|null {
+    const HEAD = data.getRef(repoPath, REF_HEAD_NAME, false);
+
+    if (!HEAD.symbolic) return null;
+
+    if (!HEAD.value?.startsWith(HEADS_DIR)) {
+        throw new Error(`Extected HEAD to be a branch, instead got ${HEAD.value || 'NULL'}`);
+    }
+
+    return path.relative(HEADS_DIR, HEAD.value);
+}

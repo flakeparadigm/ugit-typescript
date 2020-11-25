@@ -8,6 +8,7 @@ import LogCommand from './commands/log';
 import BranchCommand from './commands/branch';
 import TagCommand from './commands/tag';
 import KCommand from './commands/k';
+import StatusCommand from './commands/status';
 
 import HashObjectCommand from './commands/hashObject';
 import CatFileCommand from './commands/catFile';
@@ -25,6 +26,7 @@ yargs // eslint-disable-line
     .command(new TagCommand())
     .command(new BranchCommand())
     .command(new KCommand())
+    .command(new StatusCommand())
 
     // test & prototype commands
     .command(new HashObjectCommand())
