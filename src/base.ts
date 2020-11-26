@@ -414,6 +414,11 @@ export function getBranchName(repoPath: string): string|null {
     return path.relative(HEADS_DIR, HEAD.value);
 }
 
+/**
+ * Iterate through all the know branch names
+ *
+ * @param repoPath path of the repo root
+ */
 export function* iterBranchNames(repoPath: string): Generator<string> {
     for (
         const [refName]
