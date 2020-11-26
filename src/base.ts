@@ -316,6 +316,17 @@ export function checkout(repoPath: string, name: string): void {
 }
 
 /**
+ * Resets HEAD to the specified commit, following symbolic refs, without
+ * changing the files in the working directory
+ *
+ * @param repoPath path of the repo root
+ * @param objectId hash of the commit to reset to
+ */
+export function reset(repoPath: string, objectId: string): void {
+    data.updateRef(repoPath, REF_HEAD_NAME, new Ref(objectId, false));
+}
+
+/**
  * Create a new tag that points to the specified commit
  *
  * @param repoPath path of the repo root

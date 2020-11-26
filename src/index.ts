@@ -9,6 +9,7 @@ import BranchCommand from './commands/branch';
 import TagCommand from './commands/tag';
 import KCommand from './commands/k';
 import StatusCommand from './commands/status';
+import ResetCommand from './commands/reset';
 
 import HashObjectCommand from './commands/hashObject';
 import CatFileCommand from './commands/catFile';
@@ -27,6 +28,7 @@ yargs // eslint-disable-line
     .command(new BranchCommand())
     .command(new KCommand())
     .command(new StatusCommand())
+    .command(new ResetCommand())
 
     // test & prototype commands
     .command(new HashObjectCommand())
@@ -36,6 +38,7 @@ yargs // eslint-disable-line
 
     .wrap(yargs.terminalWidth())
     .coerce('object', (ref: string) => getObjectId(process.cwd(), ref))
+    .coerce('commit', (ref: string) => getObjectId(process.cwd(), ref))
     .demandCommand(1, 1, 'You must specify a command from above')
     .help()
     .argv;
