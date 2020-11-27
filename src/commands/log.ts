@@ -2,6 +2,7 @@ import { Arguments, Argv, CommandModule } from 'yargs';
 import { getCommit, iterCommitsAndParents } from '../base';
 import { REF_HEAD_ALIAS } from '../const';
 import { iterRefs } from '../data';
+import { printCommit, RefMap } from './show';
 
 type LogArgs = {
     object: string,
@@ -23,7 +24,7 @@ export default class LogCommand implements CommandModule<unknown, LogArgs> {
 
     public handler(args: Arguments<LogArgs>): void {
         const repoPath = process.cwd();
-        const refs: {[oid: string]: string[]} = {};
+        const refs: RefMap = {};
         const objectIds = new Set([args.object]);
 
         // make a map of objectId -> refName[]
@@ -37,14 +38,8 @@ export default class LogCommand implements CommandModule<unknown, LogArgs> {
         // print out all the commits from the starting point
         for (const objectId of iterCommitsAndParents(repoPath, objectIds)) {
             const commit = getCommit(repoPath, objectId);
-            const refStr = refs[objectId]
-                ? ` (${refs[objectId].join(', ')})`
-                : '';
 
-            console.log(`commit ${commit.objectId}${refStr}`);
-            console.group();
-            console.log(commit.message);
-            console.groupEnd();
+            printCommit(objectId, commit, refs);
             console.log('');
         }
     }
