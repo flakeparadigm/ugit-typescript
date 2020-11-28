@@ -164,7 +164,7 @@ export function updateRef(
  * @param dirPath starting directory
  * @param outputBase base path for all filenames to be relative to
  */
-function* walkDirectory(dirPath: string, outputBase = ''): Generator<string> {
+export function* walkDirectory(dirPath: string, outputBase = ''): Generator<string> {
     for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
         if (entry.isDirectory()) {
             // recurse into directories
@@ -172,7 +172,7 @@ function* walkDirectory(dirPath: string, outputBase = ''): Generator<string> {
                 path.join(dirPath, entry.name),
                 path.join(outputBase, entry.name),
             );
-        } else {
+        } else if (entry.isFile()) {
             yield path.join(outputBase, entry.name);
         }
     }

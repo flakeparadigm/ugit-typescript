@@ -25,7 +25,6 @@ export default class ShowCommand implements CommandModule<unknown, ShowArgs> {
     }
 
     public handler(args: Arguments<ShowArgs>): void {
-        if (!args.object) return;
         const repoPath = process.cwd();
         const less = spawn('less', ['-r'], { stdio: ['pipe', process.stdout, process.stderr] });
 

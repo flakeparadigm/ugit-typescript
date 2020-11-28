@@ -11,6 +11,7 @@ import KCommand from './commands/k';
 import StatusCommand from './commands/status';
 import ResetCommand from './commands/reset';
 import ShowCommand from './commands/show';
+import DiffCommand from './commands/diff';
 
 import HashObjectCommand from './commands/hashObject';
 import CatFileCommand from './commands/catFile';
@@ -31,6 +32,7 @@ yargs // eslint-disable-line
     .command(new StatusCommand())
     .command(new ResetCommand())
     .command(new ShowCommand())
+    .command(new DiffCommand())
 
     // test & prototype commands
     .command(new HashObjectCommand())

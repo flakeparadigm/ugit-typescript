@@ -436,3 +436,25 @@ export function* iterBranchNames(repoPath: string): Generator<string> {
         yield path.relative(HEADS_DIR, refName);
     }
 }
+
+/**
+ * Create a tree object from the working tree, but without writing a tree into
+ * the object store
+ *
+ * @param repoPath path of the repo root
+ */
+export function getWorkingTree(repoPath: string): TreeMap {
+    const result: TreeMap = {};
+
+    for (const relPath of data.walkDirectory(repoPath)) {
+        const fullPath = path.join(repoPath, relPath);
+        if (!isIgnored(repoPath, fullPath)) {
+            result[relPath] = data.hashObject(
+                repoPath,
+                fs.readFileSync(fullPath),
+            );
+        }
+    }
+
+    return result;
+}
