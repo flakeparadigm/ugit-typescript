@@ -1,8 +1,10 @@
+import { spawn } from 'child_process';
+import { Console } from 'console';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { getCommit, iterCommitsAndParents } from '../base';
 import { REF_HEAD_ALIAS } from '../const';
 import { iterRefs } from '../data';
-import { printCommit, RefMap } from './show';
+import { RefMap } from '../types';
 
 type LogArgs = {
     object: string,
@@ -26,6 +28,8 @@ export default class LogCommand implements CommandModule<unknown, LogArgs> {
         const repoPath = process.cwd();
         const refs: RefMap = {};
         const objectIds = new Set([args.object]);
+        const less = spawn('less', ['-r'], { stdio: ['pipe', process.stdout, process.stderr] });
+        const lessConsole = new Console(less.stdin);
 
         // make a map of objectId -> refName[]
         for (const [refName, ref] of iterRefs(repoPath)) {
@@ -39,8 +43,10 @@ export default class LogCommand implements CommandModule<unknown, LogArgs> {
         for (const objectId of iterCommitsAndParents(repoPath, objectIds)) {
             const commit = getCommit(repoPath, objectId);
 
-            printCommit(objectId, commit, refs);
-            console.log('');
+            commit.print(lessConsole, refs);
+            lessConsole.log('');
         }
+
+        less.stdin.end();
     }
 }

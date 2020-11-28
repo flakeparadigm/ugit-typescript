@@ -7,3 +7,4 @@ export type TreeEntry = {
 };
 
 export type TreeMap = { [path: string]: string; };
+export type RefMap = { [oid: string]: string[] };

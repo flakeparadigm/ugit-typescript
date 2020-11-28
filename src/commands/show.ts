@@ -1,29 +1,14 @@
+import { spawn } from 'child_process';
+import { Console } from 'console';
 import { Arguments, Argv, CommandModule } from 'yargs';
 import { getCommit, getTree } from '../base';
 import { REF_HEAD_ALIAS } from '../const';
 import { diffTrees } from '../diff';
-import Commit from '../models/commit';
+import ReadableBufferArray from '../util/readableBuffer';
 
 type ShowArgs = {
     object: string,
 };
-
-export type RefMap = { [oid: string]: string[] };
-
-export function printCommit(
-    objectId: string,
-    commit: Commit,
-    refs: RefMap = {},
-): void {
-    const refStr = refs[objectId]
-        ? ` (${refs[objectId].join(', ')})`
-        : '';
-
-    console.log(`commit ${commit.objectId}${refStr}`);
-    console.group();
-    console.log(commit.message);
-    console.groupEnd();
-}
 
 export default class ShowCommand implements CommandModule<unknown, ShowArgs> {
     public command = 'show [<object>]';
@@ -42,17 +27,20 @@ export default class ShowCommand implements CommandModule<unknown, ShowArgs> {
     public handler(args: Arguments<ShowArgs>): void {
         if (!args.object) return;
         const repoPath = process.cwd();
+        const less = spawn('less', ['-r'], { stdio: ['pipe', process.stdout, process.stderr] });
 
         const commit = getCommit(repoPath, args.object);
         const parentTree = commit.parent
             ? getCommit(repoPath, commit.parent).tree
             : null;
 
-        printCommit(args.object, commit);
-
-        console.log(diffTrees(
+        const readableDiff = new ReadableBufferArray(diffTrees(
+            repoPath,
             parentTree ? getTree(repoPath, parentTree) : {},
             getTree(repoPath, commit.tree),
-        ));
+        ), {});
+
+        commit.print(new Console(less.stdin), {});
+        readableDiff.pipe(less.stdin);
     }
 }
