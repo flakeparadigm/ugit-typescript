@@ -1,6 +1,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 let tempDir: string|null = null;
 
@@ -31,18 +32,6 @@ function getTempDir(): string {
     process.on('uncaughtException', cleanupCb);
 
     return tempDir;
-}
-
-/**
- * Cryptographically insecure UUID generator, just for quickly generating unique
- * file names for use in this temp file tool.
- */
-function uuidv4() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (template) => {
-        const r = Math.random() * 16 | 0 // eslint-disable-line
-        const value = template == 'x' ? r : (r & 0x3 | 0x8); // eslint-disable-line
-        return value.toString(16);
-    });
 }
 
 /**
