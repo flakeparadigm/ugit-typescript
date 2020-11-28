@@ -1,6 +1,7 @@
 import { Arguments, Argv, CommandModule } from 'yargs';
-import { getCommit } from '../base';
+import { getCommit, getTree } from '../base';
 import { REF_HEAD_ALIAS } from '../const';
+import { diffTrees } from '../diff';
 import Commit from '../models/commit';
 
 type ShowArgs = {
@@ -40,8 +41,18 @@ export default class ShowCommand implements CommandModule<unknown, ShowArgs> {
 
     public handler(args: Arguments<ShowArgs>): void {
         if (!args.object) return;
+        const repoPath = process.cwd();
 
-        const commit = getCommit(process.cwd(), args.object);
+        const commit = getCommit(repoPath, args.object);
+        const parentTree = commit.parent
+            ? getCommit(repoPath, commit.parent).tree
+            : null;
+
         printCommit(args.object, commit);
+
+        console.log(diffTrees(
+            parentTree ? getTree(repoPath, parentTree) : {},
+            getTree(repoPath, commit.tree),
+        ));
     }
 }

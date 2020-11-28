@@ -5,11 +5,11 @@ import UnexpectedTypeError from './errors/UnexpectedTypeError';
 import Ref from './models/ref';
 import {
     GIT_DIR,
-    ObjectType,
     OBJECT_TYPE_BLOB,
     REFS_DIR,
     REF_HEAD_NAME,
 } from './const';
+import { ObjectType } from './types';
 
 const OBJECTS_DIR = 'objects';
 const SYM_REF_HEADER = 'ref:';

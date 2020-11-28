@@ -3,7 +3,6 @@ import path from 'path';
 import {
     GIT_DIR,
     HEADS_DIR,
-    ObjectType,
     OBJECT_TYPE_BLOB,
     OBJECT_TYPE_COMMIT,
     OBJECT_TYPE_TREE,
@@ -16,12 +15,11 @@ import * as data from './data';
 import UnexpectedFilenameError from './errors/UnexpectedFilenameError';
 import Commit, { COMMIT_FIELD_PARENT, COMMIT_FIELD_TREE } from './models/commit';
 import Ref from './models/ref';
-
-type TreeEntry = {
-    name: string,
-    objectId: string,
-    type: ObjectType,
-};
+import {
+    ObjectType,
+    TreeEntry,
+    TreeMap,
+} from './types';
 
 const DEFAULT_BRANCH = 'main';
 
@@ -148,12 +146,12 @@ function getTreeEntries(
  * @param treeObjectId root object ID to build from
  * @param basePath the base path to use when describing the full file path
  */
-function getTree(
+export function getTree(
     repoPath: string,
     treeObjectId: string,
-    basePath: string,
-) {
-    const result: { [path: string]: string } = {};
+    basePath = '',
+): TreeMap {
+    const result: TreeMap = {};
 
     getTreeEntries(repoPath, treeObjectId).forEach(({ name, objectId, type }) => {
         if (
