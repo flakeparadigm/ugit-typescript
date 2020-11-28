@@ -1,10 +1,15 @@
 import fs from 'fs';
 import { spawnSync } from 'child_process';
-import { TreeMap } from './types';
+import { Action, TreeMap } from './types';
 import DefaultDict from './models/defaultDict';
 import { getObject } from './data';
 import TempFile from './util/tempFile';
-import { OBJECT_TYPE_BLOB } from './const';
+import {
+    ACTION_DELETED,
+    ACTION_MODIFIED,
+    ACTION_NEWFILE,
+    OBJECT_TYPE_BLOB,
+} from './const';
 
 /**
  * Iterate through multiple trees, yielding a path and an array of the object
@@ -56,9 +61,9 @@ function copyObjectToTemp(
 /**
  *
  * @param repoPath path of the repo root
- * @param objPath
- * @param fromOid
- * @param toOid
+ * @param objPath the path of the object relative to the repo root
+ * @param fromOid the old object to compare to
+ * @param toOid the new object to compare
  */
 function diffBlobs(
     repoPath: string,
@@ -101,4 +106,29 @@ export function diffTrees(
     return output;
 }
 
-export default diffTrees;
+/**
+ * Iterate through all of the files in the repo that have changed
+ *
+ * @param repoPath path of the repo root
+ * @param fromTree the old tree to start from
+ * @param toTree the new tree with the changes to inspect
+ */
+export function* iterChangedFiles(
+    repoPath: string,
+    fromTree: TreeMap,
+    toTree: TreeMap,
+): Generator<[string, Action]> {
+    for (const [path, [fromOid, toOid]] of compareTrees(fromTree, toTree)) {
+        if (fromOid !== toOid) {
+            let action: Action = ACTION_MODIFIED;
+
+            if (!fromOid) {
+                action = ACTION_NEWFILE;
+            } else if (!toOid) {
+                action = ACTION_DELETED;
+            }
+
+            yield [path, action];
+        }
+    }
+}

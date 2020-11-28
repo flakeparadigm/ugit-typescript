@@ -1,4 +1,5 @@
 export type ObjectType = 'blob' | 'tree' | 'commit';
+export type Action = 'modified' | 'new file' | 'deleted';
 
 export type TreeEntry = {
     name: string,

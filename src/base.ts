@@ -26,7 +26,7 @@ const DEFAULT_BRANCH = 'main';
 /**
  * Determine if a path should be ignored from a tree
  *
- * @param checkPath the path string to check
+ * @param checkPath the absolute path string to check
  */
 function isIgnored(repoPath: string, checkPath: string): boolean {
     const parts = path.relative(repoPath, checkPath).split(path.sep);

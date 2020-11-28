@@ -11,3 +11,7 @@ export const OBJECT_TYPE_COMMIT = 'commit';
 
 export const REF_HEAD_NAME = 'HEAD';
 export const REF_HEAD_ALIAS = 'HEAD';
+
+export const ACTION_MODIFIED = 'modified';
+export const ACTION_NEWFILE = 'new file';
+export const ACTION_DELETED = 'deleted';
