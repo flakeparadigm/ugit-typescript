@@ -8,6 +8,7 @@ import {
     OBJECT_TYPE_BLOB,
     REFS_DIR,
     REF_HEAD_NAME,
+    REF_MERGE_HEAD_NAME,
 } from './const';
 import { ObjectType } from './types';
 
@@ -183,17 +184,25 @@ export function* walkDirectory(dirPath: string, outputBase = ''): Generator<stri
  *
  * @param repoPath path of the repo root
  * @param deref should symbolic references be completely dereferenced
+ * @param prefix a prefix to filter the refs by (ex. refs/heads)
  */
 export function* iterRefs(
     repoPath: string,
     deref = true,
     prefix = '',
 ): Generator<[string, Ref]> {
-    if (REF_HEAD_NAME.startsWith(prefix)) {
-        // include HEAD
-        yield [REF_HEAD_NAME, getRef(repoPath, REF_HEAD_NAME, deref)];
+    // Start with built-in refs
+    const defaultRefs = [REF_HEAD_NAME, REF_MERGE_HEAD_NAME];
+    for (const refName of defaultRefs) {
+        if (refName.startsWith(prefix)) {
+            const ref = getRef(repoPath, refName, deref);
+            if (ref.value) {
+                yield [refName, ref];
+            }
+        }
     }
 
+    // Now iterate through all the other refs on disk
     for (
         const refName
         of walkDirectory(path.join(repoPath, GIT_DIR, REFS_DIR), REFS_DIR)
@@ -202,4 +211,16 @@ export function* iterRefs(
             yield [refName, getRef(repoPath, refName, deref)];
         }
     }
+}
+
+/**
+ * Delete a reference
+ *
+ * @param repoPath path of the repo root
+ * @param ref the ref to delete
+ * @param deref dereference symbolic links
+ */
+export function deleteRef(repoPath: string, ref: string, deref = true): void {
+    const [fullRef] = getRefInternal(repoPath, ref, deref);
+    fs.unlinkSync(path.join(repoPath, GIT_DIR, fullRef));
 }

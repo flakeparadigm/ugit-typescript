@@ -13,7 +13,7 @@ type LogArgs = {
 };
 
 export default class LogCommand implements CommandModule<unknown, LogArgs> {
-    public command = 'log [<object>]';
+    public command = 'log [-l] [<object>]';
 
     public description = 'show commit logs';
 

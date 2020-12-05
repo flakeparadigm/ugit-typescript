@@ -29,8 +29,8 @@ export default class ShowCommand implements CommandModule<unknown, ShowArgs> {
         const less = spawn('less', ['-r'], { stdio: ['pipe', process.stdout, process.stderr] });
 
         const commit = getCommit(repoPath, args.object);
-        const parentTree = commit.parent
-            ? getCommit(repoPath, commit.parent).tree
+        const parentTree = commit.parents[0]
+            ? getCommit(repoPath, commit.parents[0]).tree
             : null;
 
         const readableDiff = new ReadableBufferArray(diffTrees(

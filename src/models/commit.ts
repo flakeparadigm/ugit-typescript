@@ -10,19 +10,19 @@ export default class Commit {
 
     public readonly tree: string;
 
-    public readonly parent: string|null;
+    public readonly parents: string[];
 
     public readonly message: string;
 
     constructor(
         objectId: string,
         tree: string,
-        parent: string|null,
+        parents: string[],
         message: string,
     ) {
         this.objectId = objectId;
         this.tree = tree;
-        this.parent = parent;
+        this.parents = parents;
         this.message = message;
     }
 

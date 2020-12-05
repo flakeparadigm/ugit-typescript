@@ -1,6 +1,9 @@
 import fs from 'fs';
 import { spawnSync } from 'child_process';
-import { Action, TreeMap } from './types';
+import { assert } from 'console';
+import {
+    Action, TreeDataMap, TreeMap,
+} from './types';
 import DefaultDict from './models/defaultDict';
 import { getObject } from './data';
 import TempFile from './util/tempFile';
@@ -9,6 +12,9 @@ import {
     ACTION_MODIFIED,
     ACTION_NEWFILE,
     OBJECT_TYPE_BLOB,
+    REF_HEAD_NAME,
+    REF_BASE_NAME,
+    REF_MERGE_HEAD_NAME,
 } from './const';
 
 /**
@@ -131,4 +137,60 @@ export function* iterChangedFiles(
             yield [path, action];
         }
     }
+}
+
+/**
+ * Perform a 3-way merge of the passed tree
+ *
+ * @param repoPath path of the repo root
+ * @param baseTree the tree to serve as the common ancestor
+ * @param fromTree the HEAD tree
+ * @param toTree the MERGE_HEAD tree
+ */
+export function mergeTrees(
+    repoPath: string,
+    baseTree: TreeMap,
+    fromTree: TreeMap,
+    toTree: TreeMap,
+): TreeDataMap {
+    const tree: TreeDataMap = {};
+
+    for (
+        const [objPath, [baseOid, fromOid, toOid]]
+        of compareTrees(baseTree, fromTree, toTree)
+    ) {
+        tree[objPath] = mergeBlobs(repoPath, baseOid, fromOid, toOid);
+    }
+
+    return tree;
+}
+
+/**
+ * Perform a 3-way merge of 3 different blobs in the object store
+ *
+ * @param repoPath path of the repo root
+ * @param baseOid OID for the common ancestor
+ * @param fromOid OID of the HEAD version of the object
+ * @param toOid OID of the MERGE_HEAD version of the object
+ */
+function mergeBlobs(
+    repoPath: string,
+    baseOid: string | null,
+    fromOid: string | null,
+    toOid: string | null,
+): Buffer {
+    const baseFile = copyObjectToTemp(repoPath, baseOid);
+    const fromFile = copyObjectToTemp(repoPath, fromOid);
+    const toFile = copyObjectToTemp(repoPath, toOid);
+
+    const diff = spawnSync('diff3', [
+        '-m',
+        '-L', REF_HEAD_NAME, fromFile.filePath,
+        '-L', REF_BASE_NAME, baseFile.filePath,
+        '-L', REF_MERGE_HEAD_NAME, toFile.filePath,
+    ], { encoding: 'buffer' });
+
+    assert(([0, 1] as (number|null)[]).includes(diff.status));
+
+    return diff.stdout;
 }

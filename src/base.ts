@@ -1,3 +1,4 @@
+import assert from 'assert';
 import fs from 'fs';
 import path from 'path';
 import {
@@ -9,9 +10,11 @@ import {
     REFS_DIR,
     REF_HEAD_ALIAS,
     REF_HEAD_NAME,
+    REF_MERGE_HEAD_NAME,
     TAGS_DIR,
 } from './const';
 import * as data from './data';
+import { mergeTrees } from './diff';
 import UnexpectedFilenameError from './errors/UnexpectedFilenameError';
 import Commit, { COMMIT_FIELD_PARENT, COMMIT_FIELD_TREE } from './models/commit';
 import Ref from './models/ref';
@@ -235,8 +238,16 @@ export function commit(repoPath: string, message: string): string {
     const rootObjectId = writeTree(repoPath, repoPath);
     let commitData = `${COMMIT_FIELD_TREE} ${rootObjectId}\n`;
 
+    // Write the Parent value
     const { value: HEAD } = data.getRef(repoPath, REF_HEAD_NAME);
     if (HEAD) commitData += `${COMMIT_FIELD_PARENT} ${HEAD}\n`;
+
+    // Complete the merge if one is in progress
+    const { value: MERGE_HEAD } = data.getRef(repoPath, REF_MERGE_HEAD_NAME);
+    if (MERGE_HEAD) {
+        commitData += `${COMMIT_FIELD_PARENT} ${MERGE_HEAD}\n`;
+        data.deleteRef(repoPath, REF_MERGE_HEAD_NAME);
+    }
 
     commitData += `\n${message}\n`;
 
@@ -261,8 +272,8 @@ export function getCommit(repoPath: string, commitObjectId: string): Commit {
         .getObject(repoPath, commitObjectId, OBJECT_TYPE_COMMIT)
         .toString()
         .split('\n');
+    const parents: string[] = [];
     let tree = '';
-    let parent: null|string = null;
 
     for (let curr = commitLines.shift(); curr; curr = commitLines.shift()) {
         const [key, value] = curr.split(' ', 2);
@@ -272,14 +283,14 @@ export function getCommit(repoPath: string, commitObjectId: string): Commit {
                 tree = value;
                 break;
             case COMMIT_FIELD_PARENT:
-                parent = value;
+                parents.push(value);
                 break;
             default:
                 console.log(`Unexpected field in commit: ${key}=${value}`);
         }
     }
 
-    return new Commit(commitObjectId, tree, parent, commitLines.join('\n'));
+    return new Commit(commitObjectId, tree, parents, commitLines.join('\n'));
 }
 
 /**
@@ -392,16 +403,19 @@ export function* iterCommitsAndParents(
     repoPath: string,
     objectIds: Set<string>,
 ): Generator<string> {
-    const oidSet = new Set(objectIds);
+    const oidArray: (string|undefined)[] = Array.from(objectIds);
     const visited = new Set();
 
-    for (const objectId of oidSet) {
-        if (!visited.has(objectId)) {
+    while (oidArray.length) {
+        const objectId = oidArray.shift();
+
+        if (objectId && !visited.has(objectId)) {
             visited.add(objectId);
             yield objectId;
 
-            const { parent } = getCommit(repoPath, objectId);
-            if (parent) oidSet.add(parent);
+            const { parents } = getCommit(repoPath, objectId);
+            oidArray.unshift(parents.shift());
+            oidArray.push(...parents);
         }
     }
 }
@@ -457,4 +471,102 @@ export function getWorkingTree(repoPath: string): TreeMap {
     }
 
     return result;
+}
+
+/**
+ * Copy the files resulting from a merge into the working directory
+ *
+ * @param repoPath path of the repo root
+ * @param baseTree object ID of the common ancestor for 3-way merge
+ * @param headTree object ID of the current HEAD tree
+ * @param otherTree object ID of the tree to merge into HEAD
+ */
+function readTreeMerged(
+    repoPath: string,
+    baseTree: string,
+    headTree: string,
+    otherTree: string,
+): void {
+    emptyDirectory(repoPath, repoPath);
+
+    const mergedTree = mergeTrees(
+        repoPath,
+        getTree(repoPath, baseTree),
+        getTree(repoPath, headTree),
+        getTree(repoPath, otherTree),
+    );
+
+    Object.keys(mergedTree).forEach((filePath) => {
+        fs.mkdirSync(path.dirname(filePath), { recursive: true });
+        fs.writeFileSync(filePath, mergedTree[filePath]);
+    });
+}
+
+/**
+ * Merge some other commit into HEAD using 3-way merge or fast-forward
+ *
+ * @param repoPath path of the repo root
+ * @param other the other commit to merge into the current one
+ */
+export function merge(repoPath: string, other: string): void {
+    const HEAD = data.getRef(repoPath, REF_HEAD_NAME).value;
+    assert(HEAD);
+    const headCommit = getCommit(repoPath, HEAD);
+
+    const mergeBase = getMergeBase(repoPath, other, HEAD);
+    assert(mergeBase);
+    const baseCommit = getCommit(repoPath, mergeBase);
+
+    const otherCommit = getCommit(repoPath, other);
+
+    console.log();
+
+    // Handle fast-forward merges
+    if (mergeBase === HEAD) {
+        readTree(repoPath, otherCommit.tree);
+        data.updateRef(repoPath, REF_HEAD_NAME, new Ref(other, false));
+        console.log('Fast-forward merge, no need to commit');
+        return;
+    }
+
+    data.updateRef(
+        repoPath,
+        REF_MERGE_HEAD_NAME,
+        new Ref(otherCommit.objectId),
+    );
+
+    readTreeMerged(
+        repoPath,
+        baseCommit.tree,
+        headCommit.tree,
+        otherCommit.tree,
+    );
+    console.log('Merged in working tree');
+    console.log('Please commit');
+}
+
+/**
+ * Find the common ancestor of two commits
+ *
+ * @param repoPath path of the repo root
+ * @param objectId1 object ID a commit
+ * @param objectId2 object ID a commit
+ */
+export function getMergeBase(
+    repoPath: string,
+    objectId1: string,
+    objectId2: string,
+): string|null {
+    const parents1 = Array.from(
+        iterCommitsAndParents(repoPath, new Set([objectId1])),
+    );
+
+    for (
+        const objectId
+        of iterCommitsAndParents(repoPath, new Set([objectId2]))
+    ) {
+        if (parents1.includes(objectId)) return objectId;
+    }
+
+    return null;
 }

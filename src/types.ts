@@ -8,4 +8,5 @@ export type TreeEntry = {
 };
 
 export type TreeMap = { [path: string]: string; };
+export type TreeDataMap = { [path: string]: Buffer; };
 export type RefMap = { [oid: string]: string[] };

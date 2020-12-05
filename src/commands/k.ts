@@ -27,10 +27,10 @@ export default class KCommand implements CommandModule {
 
         // handle the commit objects
         for (const objectId of iterCommitsAndParents(repoPath, objectIds)) {
-            const { parent } = getCommit(repoPath, objectId);
+            const { parents } = getCommit(repoPath, objectId);
 
             dot += `"${objectId}" [shape=box style=filled label="${objectId.substring(0, 10)}"]\n`;
-            if (parent) {
+            for (const parent of parents) {
                 dot += `"${objectId}" -> "${parent}"\n`;
             }
         }

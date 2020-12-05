@@ -10,7 +10,9 @@ export const OBJECT_TYPE_TREE = 'tree';
 export const OBJECT_TYPE_COMMIT = 'commit';
 
 export const REF_HEAD_NAME = 'HEAD';
-export const REF_HEAD_ALIAS = 'HEAD';
+export const REF_HEAD_ALIAS = '@';
+export const REF_MERGE_HEAD_NAME = 'MERGE_HEAD';
+export const REF_BASE_NAME = 'BASE';
 
 export const ACTION_MODIFIED = 'modified';
 export const ACTION_NEWFILE = 'new file';

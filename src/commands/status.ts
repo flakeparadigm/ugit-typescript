@@ -6,7 +6,8 @@ import {
     getTree,
     getWorkingTree,
 } from '../base';
-import { REF_HEAD_ALIAS } from '../const';
+import { REF_HEAD_ALIAS, REF_MERGE_HEAD_NAME } from '../const';
+import { getRef } from '../data';
 import { iterChangedFiles } from '../diff';
 
 export default class StatusCommand implements CommandModule {
@@ -25,6 +26,11 @@ export default class StatusCommand implements CommandModule {
             console.log(`On branch ${branch}`);
         } else {
             console.log(`HEAD detached at ${HEAD.substring(0, 10)}`);
+        }
+
+        const { value: MERGE_HEAD } = getRef(repoPath, REF_MERGE_HEAD_NAME);
+        if (MERGE_HEAD) {
+            console.log(`Merging with ${MERGE_HEAD.substring(0, 10)}`);
         }
 
         console.log('\nChanges to be committed:');
